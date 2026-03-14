@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlowSync — Work at the Speed of Thought</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─────────────────────────────────────────
+       TOKENS
+    ───────────────────────────────────────── */
+    :root {
+      --bg:       #06080f;
+      --surface:  #0c0f1a;
+      --card:     #10141f;
+      --border:   #1c2235;
+      --accent:   #00e5ff;
+      --accent2:  #7c3aed;
+      --accent3:  #f59e0b;
+      --text:     #e4eaf8;
+      --muted:    #5a6880;
+      --radius:   14px;
+    }
+
+    /* ─────────────────────────────────────────
+       RESET & BASE
+    ───────────────────────────────────────── */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; }
+    body {
+      background:var(--bg);
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      overflow-x:hidden;
+      line-height:1.6;
+    }
+    a { text-decoration:none; color:inherit; }
+    img { display:block; max-width:100%; }
+
+    /* ─────────────────────────────────────────
+       NOISE GRAIN
+    ───────────────────────────────────────── */
+    body::after {
+      content:'';
+      position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events:none; z-index:9000; opacity:.6;
+    }
+
+    /* ─────────────────────────────────────────
+       CURSOR LIGHT
+    ───────────────────────────────────────── */
+    #cursor-light {
+      position:fixed;
+      width:600px; height:600px;
+      border-radius:50%;
+      background:radial-gradient(circle,rgba(0,229,255,.04) 0%,transparent 70%);
+      pointer-events:none; z-index:8999;
+      transform:translate(-50%,-50%);
+      transition:left .12s,top .12s;
+    }
+
+    /* ─────────────────────────────────────────
+       SCROLLBAR
+    ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+    /* ─────────────────────────────────────────
+       NAV
+    ───────────────────────────────────────── */
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:500;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1.1rem 5%;
+      background:rgba(6,8,15,.75);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(255,255,255,.04);
+      animation:slideDown .7s ease both;
+    }
+
+    @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    .nav-logo {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:1.7rem;
+      letter-spacing:.12em;
+      color:var(--accent);
+    }
+    .nav-logo span { color:var(--text); }
+
+    .nav-center { display:flex; gap:2.2rem; list-style:none; }
+    .nav-center a {
+      font-size:.82rem; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--muted); transition:color .3s;
+      position:relative; padding-bottom:2px;
+    }
+    .nav-center a::after {
+      content:''; position:absolute; bottom:0; left:0; width:0; height:1px;
+      background:var(--accent); transition:width .3s;
+    }
+    .nav-center a:hover { color:var(--accent); }
+    .nav-center a:hover::after { width:100%; }
+
+    .nav-right { display:flex; align-items:center; gap:1rem; }
+    .btn-ghost {
+      font-size:.82rem; color:var(--muted); padding:.5rem 1.1rem;
+      border:1px solid var(--border); border-radius:8px;
+      transition:all .3s; cursor:pointer; background:transparent;
+    }
+    .btn-ghost:hover { color:var(--text); border-color:var(--accent); }
+
+    .btn-cta {
+      font-size:.82rem; font-weight:600;
+      padding:.6rem 1.4rem; border-radius:8px;
+      background:linear-gradient(135deg,var(--accent),#0099bb);
+      color:#06080f; border:none; cursor:pointer;
+      transition:all .3s; position:relative; overflow:hidden;
+    }
+    .btn-cta::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+      transform:translateX(-100%); transition:transform .5s;
+    }
+    .btn-cta:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,229,255,.3); }
+    .btn-cta:hover::before { transform:translateX(100%); }
+
+    /* ─────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────── */
+    #hero {
+      min-height:100vh;
+      display:grid; place-items:center;
+      padding:9rem 5% 5rem;
+      position:relative; overflow:hidden;
+      text-align:center;
+    }
+
+    /* background grid */
+    #hero::before {
+      content:'';
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,229,255,.035) 1px,transparent 1px);
+      background-size:60px 60px;
+      mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 0%,transparent 100%);
+    }
+
+    /* radial glow */
+    .hero-glow {
+      position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+      width:900px; height:600px; border-radius:50%;
+      background:radial-gradient(ellipse,rgba(0,229,255,.09) 0%,rgba(124,58,237,.06) 40%,transparent 70%);
+      pointer-events:none;
+      animation:glowPulse 6s ease-in-out infinite;
+    }
+    @keyframes glowPulse { 0%,100%{opacity:1;transform:translateX(-50%) scale(1);} 50%{opacity:.7;transform:translateX(-50%) scale(1.08);} }
+
+    .hero-content { position:relative; z-index:1; max-width:900px; }
+
+    .hero-pill {
+      display:inline-flex; align-items:center; gap:.6rem;
+      font-size:.72rem; letter-spacing:.18em; text-transform:uppercase;
+      color:var(--accent); border:1px solid rgba(0,229,255,.25);
+      background:rgba(0,229,255,.05); padding:.4rem 1.1rem; border-radius:20px;
+      margin-bottom:2rem;
+      animation:fadeUp .8s ease both;
+    }
+    .pill-dot { width:7px; height:7px; background:var(--accent); border-radius:50%; animation:ping 2s infinite; }
+    @keyframes ping { 0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,.5);} 50%{box-shadow:0 0 0 7px rgba(0,229,255,0);} }
+
+    .hero-title {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(4rem,10vw,9.5rem);
+      line-height:.95;
+      letter-spacing:.03em;
+      margin-bottom:1.5rem;
+      animation:fadeUp .8s .1s ease both;
+    }
+    .hero-title .line1 { display:block; color:var(--text); }
+    .hero-title .line2 {
+      display:block;
+      background:linear-gradient(90deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-size:200%; animation:gradMove 3s linear infinite;
+    }
+    @keyframes gradMove { 0%{background-position:0%} 100%{background-position:200%} }
+
+    .hero-sub {
+      font-size:1.1rem; color:var(--muted); max-width:560px; margin:0 auto 2.5rem;
+      line-height:1.8; animation:fadeUp .8s .2s ease both;
+    }
+
+    .hero-btns {
+      display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;
+      animation:fadeUp .8s .3s ease both;
+    }
+
+    .btn-hero-primary {
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:linear-gradient(135deg,var(--accent),#0099bb);
+      color:#06080f; font-weight:700; font-size:.95rem;
+      padding:.9rem 2.2rem; border-radius:10px; border:none; cursor:pointer;
+      transition:all .3s; position:relative; overflow:hidden;
+    }
+    .btn-hero-primary:hover { transform:translateY(-3px); box-shadow:0 14px 36px rgba(0,229,255,.35); }
+
+    .btn-hero-outline {
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:transparent; color:var(--text); font-size:.95rem;
+      padding:.9rem 2.2rem; border-radius:10px;
+      border:1px solid rgba(255,255,255,.1); cursor:pointer;
+      transition:all .3s;
+    }
+    .btn-hero-outline:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-3px); }
+
+    /* social proof */
+    .hero-proof {
+      margin-top:3.5rem;
+      display:flex; align-items:center; justify-content:center; gap:2rem; flex-wrap:wrap;
+      animation:fadeUp .8s .5s ease both;
+    }
+    .proof-avatars { display:flex; }
+    .proof-avatar {
+      width:36px; height:36px; border-radius:50%;
+      border:2px solid var(--bg); margin-left:-10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.75rem; font-weight:700; color:#fff;
+    }
+    .proof-avatar:first-child { margin-left:0; }
+    .pa1{background:#7c3aed;} .pa2{background:#0ea5e9;} .pa3{background:#f59e0b;} .pa4{background:#10b981;} .pa5{background:#ef4444;}
+    .proof-text { font-size:.85rem; color:var(--muted); }
+    .proof-text strong { color:var(--text); }
+    .proof-sep { width:1px; height:28px; background:var(--border); }
+    .proof-rating { display:flex; flex-direction:column; align-items:center; gap:.1rem; }
+    .stars { color:var(--accent3); font-size:.9rem; letter-spacing:.1em; }
+    .rating-text { font-size:.75rem; color:var(--muted); }
+
+    /* hero dashboard mockup */
+    .hero-mockup {
+      margin-top:4.5rem;
+      position:relative; z-index:1;
+      animation:fadeUp .8s .6s ease both;
+    }
+    .mockup-frame {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 40px 100px rgba(0,0,0,.7), 0 0 60px rgba(0,229,255,.06);
+      position:relative;
+    }
+    .mockup-frame::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);
+    }
+    .mockup-bar {
+      background:rgba(255,255,255,.03); border-bottom:1px solid var(--border);
+      padding:.8rem 1.2rem; display:flex; align-items:center; gap:1rem;
+    }
+    .mac-dots { display:flex; gap:6px; }
+    .mac-dot { width:12px; height:12px; border-radius:50%; }
+    .d-red{background:#ff5f57;} .d-yellow{background:#febc2e;} .d-green{background:#28c840;}
+    .mockup-url { flex:1; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:6px; padding:.3rem .8rem; font-size:.75rem; color:var(--muted); text-align:center; }
+    .mockup-body { padding:1.5rem; display:grid; grid-template-columns:220px 1fr; gap:1rem; min-height:300px; }
+    .sidebar { border-right:1px solid var(--border); padding-right:1rem; display:flex; flex-direction:column; gap:.6rem; }
+    .sb-item { display:flex; align-items:center; gap:.7rem; padding:.55rem .8rem; border-radius:8px; font-size:.8rem; color:var(--muted); cursor:pointer; transition:all .3s; }
+    .sb-item.active { background:rgba(0,229,255,.08); color:var(--accent); border:1px solid rgba(0,229,255,.15); }
+    .sb-icon { width:20px; text-align:center; }
+    .main-panel { display:flex; flex-direction:column; gap:1rem; }
+    .panel-row { display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; }
+    .stat-widget { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:.9rem; }
+    .sw-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:.3rem; }
+    .sw-val { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--accent); letter-spacing:.05em; }
+    .sw-change { font-size:.68rem; color:#10b981; }
+    .chart-area { background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:10px; padding:1rem; }
+    .chart-title { font-size:.75rem; color:var(--muted); margin-bottom:.8rem; }
+    .chart-bars { display:flex; align-items:flex-end; gap:6px; height:80px; }
+    .bar { flex:1; border-radius:4px 4px 0 0; background:linear-gradient(to top,var(--accent2),var(--accent)); opacity:.7; transition:opacity .3s; animation:barGrow .8s ease both; }
+    .bar:hover { opacity:1; }
+    @keyframes barGrow { from{transform:scaleY(0);transform-origin:bottom;} to{transform:scaleY(1);} }
+    .task-list { display:flex; flex-direction:column; gap:.5rem; }
+    .task-item { display:flex; align-items:center; gap:.7rem; padding:.5rem .8rem; background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:8px; font-size:.75rem; color:var(--muted); }
+    .task-check { width:14px; height:14px; border-radius:3px; border:1px solid var(--border); flex-shrink:0; }
+    .task-check.done { background:var(--accent); border-color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:.6rem; color:#06080f; }
+
+    /* ─────────────────────────────────────────
+       LOGOS STRIP
+    ───────────────────────────────────────── */
+    #logos {
+      padding:2.5rem 5%;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      background:var(--surface);
+      overflow:hidden;
+    }
+    .logos-label { text-align:center; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:1.5rem; }
+    .logos-track { display:flex; gap:4rem; align-items:center; animation:logoScroll 20s linear infinite; width:max-content; }
+    @keyframes logoScroll { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+    .logo-item { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:.12em; color:var(--muted); opacity:.5; white-space:nowrap; }
+
+    /* ─────────────────────────────────────────
+       FEATURES
+    ───────────────────────────────────────── */
+    #features {
+      padding:8rem 5%;
+      position:relative;
+    }
+
+    .section-eyebrow { font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:.8rem; }
+    .section-heading {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(2.5rem,6vw,5rem);
+      line-height:1;
+      letter-spacing:.04em;
+      margin-bottom:1rem;
+    }
+    .section-heading span { background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .section-sub { font-size:1rem; color:var(--muted); max-width:520px; line-height:1.8; margin-bottom:3.5rem; }
+
+    .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+
+    .feat-card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:2rem;
+      position:relative; overflow:hidden;
+      transition:all .4s;
+      cursor:default;
+    }
+    .feat-card::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(circle at 50% 0%,rgba(0,229,255,.06),transparent 60%);
+      opacity:0; transition:opacity .4s;
+    }
+    .feat-card:hover { border-color:rgba(0,229,255,.25); transform:translateY(-6px); box-shadow:0 20px 50px rgba(0,0,0,.4); }
+    .feat-card:hover::before { opacity:1; }
+    .feat-card.purple:hover { border-color:rgba(124,58,237,.3); }
+    .feat-card.purple::before { background:radial-gradient(circle at 50% 0%,rgba(124,58,237,.08),transparent 60%); }
+    .feat-card.amber:hover { border-color:rgba(245,158,11,.3); }
+    .feat-card.amber::before { background:radial-gradient(circle at 50% 0%,rgba(245,158,11,.08),transparent 60%); }
+
+    .feat-icon {
+      width:52px; height:52px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.5rem; margin-bottom:1.4rem;
+    }
+    .fi-cyan { background:rgba(0,229,255,.1); border:1px solid rgba(0,229,255,.2); }
+    .fi-purple { background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.2); }
+    .fi-amber { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); }
+    .fi-green { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.2); }
+    .fi-rose { background:rgba(244,63,94,.1); border:1px solid rgba(244,63,94,.2); }
+    .fi-blue { background:rgba(14,165,233,.1); border:1px solid rgba(14,165,233,.2); }
+
+    .feat-name { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:.6rem; }
+    .feat-desc { font-size:.88rem; color:var(--muted); line-height:1.75; }
+
+    /* big card spanning 2 cols */
+    .feat-card.big { grid-column:span 2; display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:center; }
+    .feat-card.big .feat-text { }
+    .feat-card.big .feat-visual {
+      background:rgba(255,255,255,.02);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:1.2rem;
+      font-size:.75rem; color:var(--muted);
+    }
+    .progress-row { display:flex; align-items:center; gap:.8rem; margin-bottom:.7rem; font-size:.78rem; }
+    .progress-label { width:80px; color:var(--muted); }
+    .progress-bar { flex:1; height:6px; background:rgba(255,255,255,.05); border-radius:3px; overflow:hidden; }
+    .progress-fill { height:100%; border-radius:3px; }
+    .pf-c { background:var(--accent); }
+    .pf-p { background:var(--accent2); }
+    .pf-a { background:var(--accent3); }
+    .pf-g { background:#10b981; }
+    .progress-pct { font-size:.75rem; color:var(--text); width:35px; text-align:right; }
+
+    /* ─────────────────────────────────────────
+       HOW IT WORKS
+    ───────────────────────────────────────── */
+    #how {
+      padding:8rem 5%;
+      background:var(--surface);
+      position:relative; overflow:hidden;
+    }
+    #how::before {
+      content:'';
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:700px; height:700px; border-radius:50%;
+      background:radial-gradient(circle,rgba(124,58,237,.06),transparent 70%);
+      pointer-events:none;
+    }
+
+    .steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; position:relative; z-index:1; }
+    .step-connector {
+      position:absolute; top:calc(50% - 1px); left:33%; width:34%;
+      height:1px; background:linear-gradient(90deg,var(--accent),var(--accent2));
+      opacity:.3; pointer-events:none;
+    }
+
+    .step-card {
+      text-align:center; padding:2.5rem 1.5rem;
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      transition:all .4s;
+    }
+    .step-card:hover { border-color:rgba(0,229,255,.2); transform:translateY(-4px); }
+    .step-num {
+      font-family:'Bebas Neue',sans-serif; font-size:4rem; line-height:1;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:1rem;
+    }
+    .step-icon { font-size:2.2rem; margin-bottom:1rem; }
+    .step-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:.6rem; }
+    .step-desc { font-size:.88rem; color:var(--muted); line-height:1.75; }
+
+    /* ─────────────────────────────────────────
+       TESTIMONIALS
+    ───────────────────────────────────────── */
+    #testimonials { padding:8rem 5%; }
+
+    .testi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+
+    .testi-card {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:2rem; transition:all .4s; position:relative;
+    }
+    .testi-card:hover { border-color:rgba(0,229,255,.18); transform:translateY(-4px); }
+    .testi-card.featured {
+      background:linear-gradient(145deg,#0d1628,#0f1120);
+      border-color:rgba(0,229,255,.2);
+    }
+
+    .quote-mark { font-size:3rem; line-height:1; color:var(--accent); opacity:.3; margin-bottom:.5rem; font-family:'Georgia',serif; }
+    .testi-text { font-size:.92rem; color:#9badc0; line-height:1.8; margin-bottom:1.5rem; }
+    .testi-author { display:flex; align-items:center; gap:.9rem; }
+    .author-avatar {
+      width:42px; height:42px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:.85rem; color:#fff; flex-shrink:0;
+    }
+    .author-name { font-weight:600; font-size:.88rem; }
+    .author-role { font-size:.75rem; color:var(--muted); }
+    .testi-stars { color:var(--accent3); font-size:.8rem; margin-bottom:.8rem; }
+
+    /* ─────────────────────────────────────────
+       PRICING
+    ───────────────────────────────────────── */
+    #pricing {
+      padding:8rem 5%;
+      background:var(--surface);
+    }
+
+    .pricing-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; max-width:1000px; margin:0 auto; }
+
+    .price-card {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:2.5rem 2rem; transition:all .4s; position:relative; overflow:hidden;
+    }
+    .price-card:hover { transform:translateY(-6px); box-shadow:0 24px 50px rgba(0,0,0,.4); }
+    .price-card.popular {
+      border-color:var(--accent);
+      background:linear-gradient(145deg,#0d1c2a,#0a1018);
+    }
+    .price-card.popular::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+
+    .popular-badge {
+      position:absolute; top:16px; right:16px;
+      background:linear-gradient(135deg,var(--accent),#0099bb);
+      color:#06080f; font-size:.65rem; font-weight:700;
+      letter-spacing:.1em; text-transform:uppercase;
+      padding:.3rem .8rem; border-radius:20px;
+    }
+
+    .plan-name { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+    .plan-price { display:flex; align-items:flex-end; gap:.3rem; margin-bottom:.5rem; }
+    .price-dollar { font-size:1.2rem; color:var(--muted); margin-bottom:.4rem; }
+    .price-amount { font-family:'Bebas Neue',sans-serif; font-size:4rem; line-height:1; color:var(--text); }
+    .price-period { font-size:.82rem; color:var(--muted); margin-bottom:.4rem; }
+    .plan-desc { font-size:.82rem; color:var(--muted); margin-bottom:2rem; line-height:1.6; }
+
+    .plan-features { list-style:none; display:flex; flex-direction:column; gap:.7rem; margin-bottom:2rem; }
+    .plan-features li { display:flex; align-items:center; gap:.7rem; font-size:.85rem; color:var(--muted); }
+    .plan-features li .check { color:var(--accent); font-size:.9rem; }
+    .plan-features li .cross { color:#4b5563; }
+
+    .btn-plan {
+      width:100%; padding:.85rem; border-radius:10px;
+      font-size:.88rem; font-weight:600; cursor:pointer; transition:all .3s;
+      border:1px solid var(--border); background:transparent; color:var(--text);
+    }
+    .btn-plan:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-plan.primary {
+      background:linear-gradient(135deg,var(--accent),#0099bb);
+      color:#06080f; border:none;
+    }
+    .btn-plan.primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,229,255,.3); }
+
+    /* ─────────────────────────────────────────
+       CTA BAND
+    ───────────────────────────────────────── */
+    #cta {
+      padding:7rem 5%;
+      text-align:center;
+      position:relative; overflow:hidden;
+    }
+    #cta::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(0,229,255,.07),transparent 70%);
+      pointer-events:none;
+    }
+    .cta-inner { position:relative; z-index:1; max-width:700px; margin:0 auto; }
+    .cta-heading {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(3rem,7vw,6.5rem);
+      line-height:.95; letter-spacing:.04em; margin-bottom:1.2rem;
+    }
+    .cta-heading .c-accent { color:var(--accent); }
+    .cta-sub { font-size:1.05rem; color:var(--muted); margin-bottom:2.5rem; line-height:1.8; }
+    .cta-form { display:flex; max-width:440px; margin:0 auto; gap:.8rem; }
+    .cta-input {
+      flex:1; background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:10px; padding:.9rem 1.2rem; color:var(--text);
+      font-family:'DM Sans',sans-serif; font-size:.92rem; outline:none; transition:border-color .3s;
+    }
+    .cta-input:focus { border-color:var(--accent); }
+    .cta-input::placeholder { color:var(--muted); }
+    .btn-cta-big {
+      background:linear-gradient(135deg,var(--accent),#0099bb);
+      color:#06080f; font-weight:700; font-size:.92rem;
+      padding:.9rem 1.8rem; border-radius:10px; border:none; cursor:pointer;
+      transition:all .3s; white-space:nowrap;
+    }
+    .btn-cta-big:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,229,255,.35); }
+    .cta-note { font-size:.75rem; color:var(--muted); margin-top:1rem; }
+
+    /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+    footer {
+      background:var(--surface);
+      border-top:1px solid var(--border);
+      padding:4rem 5% 2rem;
+    }
+    .footer-top { display:grid; grid-template-columns:1.5fr repeat(3,1fr); gap:3rem; margin-bottom:3rem; }
+    .footer-brand { }
+    .footer-logo { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:.12em; color:var(--accent); margin-bottom:.8rem; }
+    .footer-tagline { font-size:.85rem; color:var(--muted); line-height:1.7; max-width:220px; margin-bottom:1.5rem; }
+    .footer-social { display:flex; gap:.8rem; }
+    .social-btn { width:36px; height:36px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.8rem; color:var(--muted); transition:all .3s; }
+    .social-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .footer-col h4 { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text); margin-bottom:1.2rem; }
+    .footer-links { list-style:none; display:flex; flex-direction:column; gap:.6rem; }
+    .footer-links a { font-size:.85rem; color:var(--muted); transition:color .3s; }
+    .footer-links a:hover { color:var(--accent); }
+    .footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:2rem; border-top:1px solid var(--border); flex-wrap:wrap; gap:1rem; }
+    .footer-copy { font-size:.78rem; color:var(--muted); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:.78rem; color:var(--muted); transition:color .3s; }
+    .footer-legal a:hover { color:var(--accent); }
+
+    /* ─────────────────────────────────────────
+       SCROLL REVEAL
+    ───────────────────────────────────────── */
+    .reveal { opacity:0; transform:translateY(36px); transition:opacity .75s ease, transform .75s ease; }
+    .reveal.up { opacity:1; transform:translateY(0); }
+    .reveal.d1 { transition-delay:.1s; }
+    .reveal.d2 { transition-delay:.2s; }
+    .reveal.d3 { transition-delay:.3s; }
+    .reveal.d4 { transition-delay:.4s; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ─────────────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────────────── */
+    @media(max-width:1024px) {
+      .features-grid { grid-template-columns:repeat(2,1fr); }
+      .feat-card.big { grid-column:span 2; }
+      .mockup-body { grid-template-columns:1fr; }
+      .sidebar { display:none; }
+    }
+    @media(max-width:768px) {
+      .nav-center { display:none; }
+      .features-grid,.steps-grid,.testi-grid,.pricing-grid { grid-template-columns:1fr; }
+      .feat-card.big { grid-column:auto; grid-template-columns:1fr; }
+      .footer-top { grid-template-columns:1fr 1fr; }
+      .panel-row { grid-template-columns:1fr 1fr; }
+      .cta-form { flex-direction:column; }
+    }
+    @media(max-width:480px) {
+      .footer-top { grid-template-columns:1fr; }
+      .hero-proof { flex-direction:column; gap:1rem; }
+      .proof-sep { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor-light"></div>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<nav>
+  <div class="nav-logo">FLOW<span>SYNC</span></div>
+  <ul class="nav-center">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="btn-ghost">Log In</button>
+    <button class="btn-cta">Get Started Free</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section id="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-content">
+    <div class="hero-pill"><span class="pill-dot"></span> Trusted by 50,000+ teams worldwide</div>
+
+    <h1 class="hero-title">
+      <span class="line1">Work at the</span>
+      <span class="line2">Speed of Thought</span>
+    </h1>
+
+    <p class="hero-sub">
+      FlowSync unifies your tasks, docs, and team communication into one seamless workspace — so you can focus on what actually matters.
+    </p>
+
+    <div class="hero-btns">
+      <button class="btn-hero-primary">Start for Free →</button>
+      <button class="btn-hero-outline">▶ Watch Demo</button>
+    </div>
+
+    <div class="hero-proof">
+      <div class="proof-avatars">
+        <div class="proof-avatar pa1">AK</div>
+        <div class="proof-avatar pa2">MB</div>
+        <div class="proof-avatar pa3">SC</div>
+        <div class="proof-avatar pa4">LT</div>
+        <div class="proof-avatar pa5">RJ</div>
+      </div>
+      <p class="proof-text"><strong>12,000+</strong> teams joined this month</p>
+      <div class="proof-sep"></div>
+      <div class="proof-rating">
+        <div class="stars">★★★★★</div>
+        <div class="rating-text">4.9/5 on G2 & Capterra</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Mockup -->
+    <div class="hero-mockup">
+      <div class="mockup-frame">
+        <div class="mockup-bar">
+          <div class="mac-dots">
+            <div class="mac-dot d-red"></div>
+            <div class="mac-dot d-yellow"></div>
+            <div class="mac-dot d-green"></div>
+          </div>
+          <div class="mockup-url">app.flowsync.io/dashboard</div>
+        </div>
+        <div class="mockup-body">
+          <div class="sidebar">
+            <div class="sb-item active"><span class="sb-icon">⚡</span> Dashboard</div>
+            <div class="sb-item"><span class="sb-icon">📋</span> My Tasks</div>
+            <div class="sb-item"><span class="sb-icon">👥</span> Team</div>
+            <div class="sb-item"><span class="sb-icon">📂</span> Projects</div>
+            <div class="sb-item"><span class="sb-icon">📈</span> Analytics</div>
+            <div class="sb-item"><span class="sb-icon">⚙️</span> Settings</div>
+          </div>
+          <div class="main-panel">
+            <div class="panel-row">
+              <div class="stat-widget"><div class="sw-label">Tasks Done</div><div class="sw-val">248</div><div class="sw-change">↑ 18% this week</div></div>
+              <div class="stat-widget"><div class="sw-label">Team Velocity</div><div class="sw-val">94%</div><div class="sw-change">↑ 6% vs last sprint</div></div>
+              <div class="stat-widget"><div class="sw-label">Open Issues</div><div class="sw-val">12</div><div class="sw-change" style="color:#f59e0b">— 3 critical</div></div>
+            </div>
+            <div class="chart-area">
+              <div class="chart-title">Weekly Output</div>
+              <div class="chart-bars">
+                <div class="bar" style="height:45%;animation-delay:.1s"></div>
+                <div class="bar" style="height:60%;animation-delay:.15s"></div>
+                <div class="bar" style="height:40%;animation-delay:.2s"></div>
+                <div class="bar" style="height:75%;animation-delay:.25s"></div>
+                <div class="bar" style="height:55%;animation-delay:.3s"></div>
+                <div class="bar" style="height:90%;animation-delay:.35s"></div>
+                <div class="bar" style="height:70%;animation-delay:.4s"></div>
+              </div>
+            </div>
+            <div class="task-list">
+              <div class="task-item"><div class="task-check done">✓</div> Finalize Q3 roadmap presentation</div>
+              <div class="task-item"><div class="task-check done">✓</div> Review PR #142 — auth module</div>
+              <div class="task-item"><div class="task-check"></div> Update onboarding flow copy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ LOGOS ═══════════════════ -->
+<div id="logos">
+  <p class="logos-label">Trusted by fast-moving teams at</p>
+  <div class="logos-track">
+    <span class="logo-item">STRIPE</span>
+    <span class="logo-item">NOTION</span>
+    <span class="logo-item">VERCEL</span>
+    <span class="logo-item">FIGMA</span>
+    <span class="logo-item">SHOPIFY</span>
+    <span class="logo-item">LINEAR</span>
+    <span class="logo-item">GITHUB</span>
+    <span class="logo-item">NETLIFY</span>
+    <!-- duplicate for seamless loop -->
+    <span class="logo-item">STRIPE</span>
+    <span class="logo-item">NOTION</span>
+    <span class="logo-item">VERCEL</span>
+    <span class="logo-item">FIGMA</span>
+    <span class="logo-item">SHOPIFY</span>
+    <span class="logo-item">LINEAR</span>
+    <span class="logo-item">GITHUB</span>
+    <span class="logo-item">NETLIFY</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ FEATURES ═══════════════════ -->
+<section id="features">
+  <div class="reveal">
+    <p class="section-eyebrow">Why FlowSync</p>
+    <h2 class="section-heading">Everything your team <span>needs to ship</span></h2>
+    <p class="section-sub">Built for modern teams who move fast and need tools that keep up — not slow them down.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feat-card reveal d1">
+      <div class="feat-icon fi-cyan">⚡</div>
+      <div class="feat-name">Lightning Task Engine</div>
+      <p class="feat-desc">Create, assign, and ship tasks in seconds. Keyboard-first design means zero friction from idea to execution.</p>
+    </div>
+    <div class="feat-card reveal d2">
+      <div class="feat-icon fi-purple">🧠</div>
+      <div class="feat-name">AI-Powered Prioritization</div>
+      <p class="feat-desc">Our AI reads your team's patterns and surfaces what needs attention most — before you even ask.</p>
+    </div>
+    <div class="feat-card reveal d3">
+      <div class="feat-icon fi-amber">🔗</div>
+      <div class="feat-name">Deep Integrations</div>
+      <p class="feat-desc">Plugs into GitHub, Figma, Slack, Notion and 100+ tools your team already uses. No migration required.</p>
+    </div>
+
+    <!-- Big card -->
+    <div class="feat-card big reveal d1">
+      <div class="feat-text">
+        <div class="feat-icon fi-green">📊</div>
+        <div class="feat-name">Real-Time Analytics</div>
+        <p class="feat-desc">Live dashboards show you exactly where your team's time goes. Spot bottlenecks, celebrate wins, and make informed decisions — always with data, never guesswork.</p>
+      </div>
+      <div class="feat-visual">
+        <p style="font-size:.7rem;color:var(--muted);margin-bottom:.8rem;letter-spacing:.1em;text-transform:uppercase;">Team Efficiency Score</p>
+        <div class="progress-row"><span class="progress-label">Design</span><div class="progress-bar"><div class="progress-fill pf-c" style="width:88%"></div></div><span class="progress-pct">88%</span></div>
+        <div class="progress-row"><span class="progress-label">Engineering</span><div class="progress-bar"><div class="progress-fill pf-p" style="width:94%"></div></div><span class="progress-pct">94%</span></div>
+        <div class="progress-row"><span class="progress-label">Marketing</span><div class="progress-bar"><div class="progress-fill pf-a" style="width:76%"></div></div><span class="progress-pct">76%</span></div>
+        <div class="progress-row"><span class="progress-label">Product</span><div class="progress-bar"><div class="progress-fill pf-g" style="width:91%"></div></div><span class="progress-pct">91%</span></div>
+      </div>
+    </div>
+
+    <div class="feat-card reveal d2">
+      <div class="feat-icon fi-rose">🔒</div>
+      <div class="feat-name">Enterprise Security</div>
+      <p class="feat-desc">SOC 2 Type II certified. End-to-end encryption, SSO, audit logs, and role-based access control built in.</p>
+    </div>
+    <div class="feat-card reveal d3">
+      <div class="feat-icon fi-blue">🌍</div>
+      <div class="feat-name">Works Anywhere</div>
+      <p class="feat-desc">Fully responsive web app, native iOS & Android apps, and offline-first mode for when wifi fails you.</p>
+    </div>
+    <div class="feat-card reveal d4">
+      <div class="feat-icon fi-purple">💬</div>
+      <div class="feat-name">Async Collaboration</div>
+      <p class="feat-desc">Threaded comments, video messages, and shared docs attached directly to tasks — less meetings, more doing.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+<section id="how">
+  <div style="text-align:center;margin-bottom:4rem;" class="reveal">
+    <p class="section-eyebrow">The Process</p>
+    <h2 class="section-heading">Up and running <span>in minutes</span></h2>
+    <p class="section-sub" style="margin:0 auto;">No lengthy onboarding. No training required. Just sign up and start shipping.</p>
+  </div>
+
+  <div class="steps-grid" style="position:relative;">
+    <div class="step-card reveal d1">
+      <div class="step-num">01</div>
+      <div class="step-icon">✉️</div>
+      <h3 class="step-title">Create Your Workspace</h3>
+      <p class="step-desc">Sign up with your work email. Invite your team. Your workspace is live in under 60 seconds — no credit card needed.</p>
+    </div>
+    <div class="step-card reveal d2">
+      <div class="step-num">02</div>
+      <div class="step-icon">⚙️</div>
+      <h3 class="step-title">Connect Your Tools</h3>
+      <p class="step-desc">Link GitHub, Slack, Figma and more with one click. FlowSync pulls in your existing work automatically.</p>
+    </div>
+    <div class="step-card reveal d3">
+      <div class="step-num">03</div>
+      <div class="step-icon">🚀</div>
+      <h3 class="step-title">Ship Faster</h3>
+      <p class="step-desc">Organize, prioritize, and execute. Watch your team's velocity climb in the first week of using FlowSync.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ TESTIMONIALS ═══════════════════ -->
+<section id="testimonials">
+  <div style="text-align:center;margin-bottom:4rem;" class="reveal">
+    <p class="section-eyebrow">Social Proof</p>
+    <h2 class="section-heading">Loved by <span>real teams</span></h2>
+  </div>
+
+  <div class="testi-grid">
+    <div class="testi-card reveal d1">
+      <div class="testi-stars">★★★★★</div>
+      <div class="quote-mark">"</div>
+      <p class="testi-text">FlowSync cut our sprint planning time in half. The AI prioritization alone is worth every penny — it surfaces what actually matters.</p>
+      <div class="testi-author">
+        <div class="author-avatar" style="background:#7c3aed;">SK</div>
+        <div><div class="author-name">Sarah Kim</div><div class="author-role">VP Engineering, Luma Health</div></div>
+      </div>
+    </div>
+    <div class="testi-card featured reveal d2">
+      <div class="testi-stars">★★★★★</div>
+      <div class="quote-mark">"</div>
+      <p class="testi-text">We replaced five different tools with FlowSync. The team was hesitant at first, but after one sprint they never looked back. Game-changer.</p>
+      <div class="testi-author">
+        <div class="author-avatar" style="background:#0ea5e9;">MT</div>
+        <div><div class="author-name">Marcus Torres</div><div class="author-role">CTO, BuildFast Studio</div></div>
+      </div>
+    </div>
+    <div class="testi-card reveal d3">
+      <div class="testi-stars">★★★★★</div>
+      <div class="quote-mark">"</div>
+      <p class="testi-text">As a remote-first team, async collaboration was our biggest pain. FlowSync fixed it completely. The video messages in tasks are brilliant.</p>
+      <div class="testi-author">
+        <div class="author-avatar" style="background:#f59e0b;">AL</div>
+        <div><div class="author-name">Aisha Longman</div><div class="author-role">Head of Product, Crestwave</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PRICING ═══════════════════ -->
+<section id="pricing">
+  <div style="text-align:center;margin-bottom:4rem;" class="reveal">
+    <p class="section-eyebrow">Simple Pricing</p>
+    <h2 class="section-heading">No surprises, <span>ever</span></h2>
+    <p class="section-sub" style="margin:0 auto;">Start free, scale when you need to. Cancel anytime.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="price-card reveal d1">
+      <p class="plan-name">Starter</p>
+      <div class="plan-price"><span class="price-dollar">$</span><span class="price-amount">0</span><span class="price-period">/mo</span></div>
+      <p class="plan-desc">Perfect for freelancers and small teams getting started.</p>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Up to 5 members</li>
+        <li><span class="check">✓</span> 3 active projects</li>
+        <li><span class="check">✓</span> Basic analytics</li>
+        <li><span class="check">✓</span> 5 GB storage</li>
+        <li><span class="cross">✗</span> AI Prioritization</li>
+        <li><span class="cross">✗</span> Integrations</li>
+      </ul>
+      <button class="btn-plan">Get Started Free</button>
+    </div>
+
+    <div class="price-card popular reveal d2">
+      <span class="popular-badge">Most Popular</span>
+      <p class="plan-name">Pro</p>
+      <div class="plan-price"><span class="price-dollar">$</span><span class="price-amount">29</span><span class="price-period">/mo per team</span></div>
+      <p class="plan-desc">For growing teams that need power and flexibility.</p>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Unlimited members</li>
+        <li><span class="check">✓</span> Unlimited projects</li>
+        <li><span class="check">✓</span> Advanced analytics</li>
+        <li><span class="check">✓</span> 100 GB storage</li>
+        <li><span class="check">✓</span> AI Prioritization</li>
+        <li><span class="check">✓</span> 100+ integrations</li>
+      </ul>
+      <button class="btn-plan primary">Start 14-Day Trial</button>
+    </div>
+
+    <div class="price-card reveal d3">
+      <p class="plan-name">Enterprise</p>
+      <div class="plan-price"><span class="price-amount" style="font-size:2.5rem;line-height:1.4">Custom</span></div>
+      <p class="plan-desc">For large orgs that need compliance, SSO, and dedicated support.</p>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Everything in Pro</li>
+        <li><span class="check">✓</span> SSO / SAML</li>
+        <li><span class="check">✓</span> SOC 2 compliance</li>
+        <li><span class="check">✓</span> Unlimited storage</li>
+        <li><span class="check">✓</span> SLA guarantee</li>
+        <li><span class="check">✓</span> Dedicated CSM</li>
+      </ul>
+      <button class="btn-plan">Contact Sales →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section id="cta">
+  <div class="cta-inner reveal">
+    <h2 class="cta-heading">Ready to <span class="c-accent">Flow?</span></h2>
+    <p class="cta-sub">Join 50,000+ teams who already ship faster with FlowSync. No credit card. No setup fees. Just results.</p>
+    <div class="cta-form">
+      <input class="cta-input" type="email" placeholder="Enter your work email…"/>
+      <button class="btn-cta-big">Get Started →</button>
+    </div>
+    <p class="cta-note">Free forever plan available · No credit card required · Cancel anytime</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo">FLOWSYNC</div>
+      <p class="footer-tagline">Work at the speed of thought. Built for teams that ship.</p>
+      <div class="footer-social">
+        <a class="social-btn" href="#">𝕏</a>
+        <a class="social-btn" href="#">in</a>
+        <a class="social-btn" href="#">gh</a>
+        <a class="social-btn" href="#">yt</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul class="footer-links">
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Changelog</a></li>
+        <li><a href="#">Roadmap</a></li>
+        <li><a href="#">Integrations</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul class="footer-links">
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Press Kit</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <ul class="footer-links">
+        <li><a href="#">Documentation</a></li>
+        <li><a href="#">API Reference</a></li>
+        <li><a href="#">Community</a></li>
+        <li><a href="#">Status Page</a></li>
+        <li><a href="#">Support</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2025 FlowSync Technologies, Inc. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Cookie Settings</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script>
+  // Cursor light
+  const cl = document.getElementById('cursor-light');
+  document.addEventListener('mousemove', e => {
+    cl.style.left = e.clientX + 'px';
+    cl.style.top  = e.clientY + 'px';
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const ro = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('up'); ro.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => ro.observe(el));
+
+  // Nav shrink on scroll
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.padding = window.scrollY > 60 ? '.8rem 5%' : '1.1rem 5%';
+    nav.style.borderBottomColor = window.scrollY > 60 ? 'rgba(0,229,255,.1)' : 'rgba(255,255,255,.04)';
+  });
+
+  // CTA form
+  document.querySelector('.btn-cta-big').addEventListener('click', () => {
+    const val = document.querySelector('.cta-input').value;
+    if (!val || !val.includes('@')) { alert('Please enter a valid email.'); return; }
+    document.querySelector('.cta-form').innerHTML = '<p style="color:var(--accent);font-size:1.1rem;font-weight:600;text-align:center;">🎉 You\'re on the list! Check your inbox.</p>';
+  });
+
+  // Navbar CTA buttons
+  document.querySelectorAll('.btn-cta, .btn-hero-primary, .btn-plan.primary').forEach(btn => {
+    btn.addEventListener('click', () => { document.querySelector('#cta').scrollIntoView({behavior:'smooth'}); });
+  });
+</script>
+</body>
+</html>
