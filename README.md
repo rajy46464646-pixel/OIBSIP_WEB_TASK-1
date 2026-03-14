@@ -1,2 +1,14 @@
 # OIBSIP_WEB_TASK-1
-Landing Page HTML Task is a simple front-end project created using HTML and basic CSS. It demonstrates the structure of a modern landing page including a header, navigation menu, hero section, content areas, and footer. This project helps practice layout design and basic web development skills.
+Oasis Infobyte Internship
+
+Domain: Web Development
+
+Task 1 – Landing Page
+
+Objective: To create a responsive landing page using HTML and CSS.
+
+Tools Used: HTML CSS JavaScript
+
+Features: Responsive design Simple layout Navigation bar Styled sections
+
+Result: Landing Page project completed successfully.
